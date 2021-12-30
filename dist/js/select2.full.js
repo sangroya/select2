@@ -974,7 +974,10 @@ S2.define('select2/results',[
       var selectedIds = selected.map(function (s) {
         return s.id.toString();
       });
-
+    //@sangroya allow duplicate value if it's true
+      if(self.options.get('duplicate'))
+      selectedIds=[];
+   
       var $options = self.$results
         .find('.select2-results__option--selectable');
 
@@ -1485,6 +1488,7 @@ S2.define('select2/selection/base',[
     });
 
     container.on('selection:update', function (params) {
+     
       self.update(params.data);
     });
 
@@ -2347,7 +2351,6 @@ S2.define('select2/selection/eventRelay',[
       var evt = $.Event('select2:' + name, {
         params: params
       });
-
       self.$element.trigger(evt);
 
       // Only handle preventable events if it was one
@@ -3328,7 +3331,9 @@ S2.define('select2/data/select',[
       data.element != null && data.element.tagName.toLowerCase() === 'option'
     ) {
       data.element.selected = true;
-
+      // @sangroya
+    if(this.options.get('duplicate'))
+      $(this.$element).append('<option value=\"'+data.id+'\">' +data.text + '</option>');
       this.$element.trigger('input').trigger('change');
 
       return;
@@ -3364,10 +3369,19 @@ S2.define('select2/data/select',[
     var self = this;
 
     if (!this.$element.prop('multiple')) {
+     
       return;
     }
-
+ 
+    
     data.selected = false;
+    // @sangroya
+    if(this.options.get('duplicate'))
+    {
+      // delete item if ajax is set or in data set have more thann 1
+      if($(self.$element).find('option[value=' + data.id + ']').length>1 || this.options.get('ajax'))
+      $(self.$element).find(data.element).remove();
+    }
 
     if (
       data.element != null &&
@@ -3606,13 +3620,13 @@ S2.define('select2/data/array',[
     var $option = this.$element.find('option').filter(function (i, elm) {
       return elm.value == data.id.toString();
     });
-
-    if ($option.length === 0) {
+// @sangroya update condition to allow duplicate values
+    if ($option.length === 0 || (this.options.get('duplicate'))) {
       $option = this.option(data);
 
       this.addOptions($option);
     }
-
+ 
     ArrayAdapter.__super__.select.call(this, data);
   };
 
@@ -5403,6 +5417,7 @@ S2.define('select2/options',[
     if (this.options.multiple == null) {
       this.options.multiple = $e.prop('multiple');
     }
+    
 
     if (this.options.disabled == null) {
       this.options.disabled = $e.prop('disabled');
